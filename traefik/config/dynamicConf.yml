@@ -8,7 +8,6 @@ http:
       headers:
         customrequestheaders:
           X-Forwarded-Proto: "https, wss"
-          isdevelopment: true
   serversTransports:
     BCHTTP:
       disableHTTP2: true
