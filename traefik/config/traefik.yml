@@ -1,4 +1,6 @@
 ## STATIC CONFIGURATION
+core:
+  defaultRuleSyntax: v2 ## v3 has a new ruleSyntax, I have not adjusted to that, so that is why we want to make use of the Syntax from v2
 global:
   checkNewVersion: true
   sendAnonymousUsage: false

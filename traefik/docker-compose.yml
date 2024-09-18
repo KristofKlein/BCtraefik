@@ -2,7 +2,7 @@ services:
   traefik: # what we wanna call the service
       networks:
       - defaultnat # the network we want the container to work with
-      image: traefik:windowsservercore-1809 # traefik image that fits your host
+      image: traefik:windowsservercore-1809 # traefik image that fits your host - like this it is the latest traefik so v3
       restart: 'always'
       ports: # or in terms of traefik: EntryPoints: 
         - "443:443" # we want to access BC via https
