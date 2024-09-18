@@ -55,7 +55,7 @@ One thing that killed me in the beginning was the "where should stuff go" topic 
 
 Anyway, if you kept all in place, used the files needed you should have traefik up and running! and you should be able to reach the UI.
 
-## BC Container time!
+## BC Container time! Almost
 
 Now what you have been waiting for. get BC container and traefik to work. The first thing we need to take care of is an image for BC. There are some ways to achive this, but I went an easy route: bccontainerhelper. It has what it needs to create images in the correct way. It even has, what it needs to make stuff work proper thanks to the brillant file overload. Because there is one thing that is "anoying". A hen - egg problem:
 
@@ -67,3 +67,46 @@ So I have file called "CheckHealth.ps1" thisone I will hand into the image creat
 the final thing you have to do, tell the new-BCImage where it can find the script and there you go. 
 
 [Build-BcContainerImage](https://github.com/KristofKlein/BCtraefik/blob/b8350dd21fcbf788c30c0deb39760904e77ff260/BusinessCentral/image/Build-BCContainerImage.ps1)
+
+## BC Container time! Now for real
+
+So my idea was to make use of docker compose ( guess I mentioned this now just often enough), and I wanted to use sort of a template for all upcoming situations. So this is what made me to come around with one docker-compose.yml while injecting the needed details via env files. those are just smart replacements while compose starts up. they overwrite each other based on loaded order. With newer compose versions they also support some smart "syntax" like : do not work if a value is missing, or if no value is set, take a default. Kind of nice. 
+
+In the end I created two env files. One is like global. E.g. the the full qulified host name (FQN). that is not to change normally. Than there is a second file within a subfolder ( not sure why I did this, as you can name those files what you want...). Anyway. so after I have the global env, I apply the special one as second. There I control stuff that I want to happen for that particular instance. As you can see I have a folder BC231, you could think og BC2310 or vNext or what ever suites you best here. My Setup is normally build around an onPrem hosted SQL Server, which makes stuff more complicated, but is a quite common scenario I guess for OG's. 
+I am quite sure it will also work with the SQL Server within the container (IF YOUR IMAGE CREATION ADDED IT!). 
+
+the compose file for BC...
+It has quiet some common stuff you saw already in the one for traefik, like network, restart policies etc. But there is more, quite a lot more ( this is the moment to lift your virtual hat to Freddy, as BC container simply takes care of all that things for you in the new-bccontainer cmd... took a while to replay that).
+
+The main sections are the following:
+
+### environment
+Here we set all the things we need for bccontainerhelper - or more precious - docker-nav. What is set here gets used while the container starts up regulr but also first time. 
+
+### customNavSettings
+so customNavSettings is in fact also an evironment, but it applies to the BC Service itself, to change settings of it. The way you need to enter it is a bit strange, but works the way presented in the file. the Whole element needs to have " around it and every new key=value needs to have a new line ,\ - besides the last one.
+
+### labels
+this is where traefik kicks in once more. Here you control, how traefik has to deal with the routing.
+normally you will see at least two things for traefik to work: a route and a service. And if need be a middleware. the way this works you better get from traefiks pages rather from me trying to explain. 
+But what I want to mention is the following:
+
+#### pure container self driven setup 
+This setup is completly controlled by what the container will ship.
+What is the router called, what is the rule we should use to pick this particular service, etc.
+
+#### dynamic config related setup 
+This setup is given by traefik, but gets used by our containers
+
+An example here is 
+
+- traefik.http.routers.${COMPOSE_PROJECT_NAME}ui.middlewares=sslHeader@file
+or
+- traefik.http.services.${COMPOSE_PROJECT_NAME}ui.loadbalancer.serverstransport=BCHTTP@file
+
+Notice this @file? this is there to tell traefik, that it find those elements sslheaders or BCHTTP in a file...now remember the dynamic content? there I have those two things defined and setup. 
+
+And that should be it - in the end you will call something like
+
+`docker-compose.exe --env-file .env --env-file .\bc231\.env up bc`
+
