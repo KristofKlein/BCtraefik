@@ -59,10 +59,11 @@ Anyway, if you kept all in place, used the files needed you should have traefik 
 
 Now what you have been waiting for. get BC container and traefik to work. The first thing we need to take care of is an image for BC. There are some ways to achive this, but I went an easy route: bccontainerhelper. It has what it needs to create images in the correct way. It even has, what it needs to make stuff work proper thanks to the brillant file overload. Because there is one thing that is "anoying". A hen - egg problem:
 
-Treafik only routes containers in healthy state! ok, so in order to get our bc container healthy it does a http request "itself" 200 we are healty, anything else, not so good. The twist here is: if traefik is the one that does the http stuff for the container, and if the container is not healty, how can bc check against its url if it is reachable? you got it, it can't. So this where this "we need to fool the healthcheck" comes into play. 
+Traefik only routes containers in healthy state! ok, so in order to get our bc container healthy it does a http request "itself" 200 we are healty, anything else, not so good. The twist here is: if traefik is the one that does the http stuff for the container, and if the container is not healty, how can bc check against its url if it is reachable? you got it, it can't. So this where this "we need to fool the healthcheck" comes into play. 
 
 The way I solved this leans towards what was already made for traefik v1.7 but a biiiit different.
 So I have file called "CheckHealth.ps1" thisone I will hand into the image creation process. my healtcheck will be able to detect the circumstances the container was started : like should it use ssl? -> http vs https, is it even offering a webserivces -> yes: ask localhost no: fallback and check the service is running. 
 
 the final thing you have to do, tell the new-BCImage where it can find the script and there you go. 
 
+[Build-BcContainerImage](https://github.com/KristofKlein/BCtraefik/blob/b8350dd21fcbf788c30c0deb39760904e77ff260/BusinessCentral/image/Build-BCContainerImage.ps1)
