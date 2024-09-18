@@ -1,0 +1,15 @@
+tls:
+  certificates:
+    - certFile: /etc/traefik/server.crt
+      keyFile: /etc/traefik/server.key
+http:
+  middlewares:
+    sslHeader:
+      headers:
+        customrequestheaders:
+          X-Forwarded-Proto: "https, wss"
+          isdevelopment: true
+  serversTransports:
+    BCHTTP:
+      disableHTTP2: true
+      insecureSkipVerify: true
