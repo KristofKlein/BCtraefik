@@ -1,0 +1,39 @@
+## STATIC CONFIGURATION
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false
+log:
+  level: DEBUG
+accesslog: true
+tracing:
+api:
+  insecure: true
+  dashboard: true
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+  odata:
+    address: ":7048"
+  soap:
+    address: ":7047"
+providers:
+  docker:
+    endpoint: "npipe:////./pipe/docker_engine"
+    watch: true
+    exposedByDefault: true
+  file:
+    directory: "c:/etc/traefik"
+    watch: true
+
+
+
+
+
+
+
+
+
+
+
