@@ -1,0 +1,112 @@
+services:
+  bc:
+    networks:
+      - defaultnat
+    image: bc:${TAG:?error}
+    restart: unless-stopped
+    volumes:
+      - C:\ProgramData\BcContainerHelper:C:\ProgramData\BcContainerHelper
+    environment:
+      accept_eula: Y
+      webserverinstance: ${COMPOSE_PROJECT_NAME}
+      publicdnsname: ${FQNNAME:?error}
+      auth: ${AUTHMODE:-Windows}
+      usessl: ${USESSL:-n}
+      databaseServer: ${DBSERVER}
+      databaseInstance: 
+      databaseName: ${DBNAME}
+      enableApiServices: Y
+      customNavSettings: "PublicODataBaseUrl=https://${FQNNAME:?error}/${COMPOSE_PROJECT_NAME}rest/odata,\
+        PublicSOAPBaseUrl=https://${FQNNAME:?error}/${COMPOSE_PROJECT_NAME}soap/ws,\
+        PublicWebBaseUrl=https://${FQNNAME:?error}/${COMPOSE_PROJECT_NAME},\
+        DisableTokenSigningCertificateValidation=true,\
+        ClientServicesCredentialType=${CLIENTSERVICESCREDENTIALTYPE:-Windows},\
+        ApiServicesEnabled=true,\
+        ExtendedSecurityTokenLifetime=24"
+    labels:
+      - traefik.enable=true
+      ## UI ##
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}ui.rule=Host(`${FQNNAME:?error}`) && PathPrefix(`/{path:(?i)${COMPOSE_PROJECT_NAME}}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}ui.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}ui.service=${COMPOSE_PROJECT_NAME}ui@docker
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}ui.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}ui.middlewares=sslHeader@file
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}ui.loadBalancer.server.scheme=${SCHEMA:-http}
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}ui.loadBalancer.server.port=${PORT:-80}
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}ui.loadbalancer.serverstransport=BCHTTP@file
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}ui.loadBalancer.sticky.cookie=true
+      ## DOWNLOAD-API ##
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}dl.rule=Host(`${FQNNAME:?error}`) && PathPrefix(`/{path:(?i)${COMPOSE_PROJECT_NAME}dl}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}dl.entrypoints=web
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}dl.service=${COMPOSE_PROJECT_NAME}dl@docker
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}dl.middlewares=${COMPOSE_PROJECT_NAME}dl@docker
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}dl.stripprefix.prefixes=/${COMPOSE_PROJECT_NAME}dl
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}dl.loadBalancer.server.scheme=http
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}dl.loadBalancer.server.port=8080
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}dl.loadbalancer.serverstransport=BCHTTP@file
+
+      ## DEV Endpoint ##
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}dev.rule=Host(`${FQNNAME:?error}`) && PathPrefix(`/{path:(?i)${COMPOSE_PROJECT_NAME}dev}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}dev.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}dev.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}dev.service=${COMPOSE_PROJECT_NAME}dev@docker
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}dev.middlewares=${COMPOSE_PROJECT_NAME}dev@docker
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}dev.replacepathregex.regex=^/${COMPOSE_PROJECT_NAME}dev(.*)
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}dev.replacepathregex.replacement=/BC$$1
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}dev.loadBalancer.server.scheme=${SCHEMA:-http}
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}dev.loadBalancer.server.port=7049
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}dev.loadbalancer.serverstransport=BCHTTP@file
+
+      ## REST Endpoint ##  
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}rest.rule=Host(`${FQNNAME:?error}`) && PathPrefix(`/{path:(?i)${COMPOSE_PROJECT_NAME}rest}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}rest.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}rest.service=${COMPOSE_PROJECT_NAME}rest@docker
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}rest.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}rest.middlewares=${COMPOSE_PROJECT_NAME}rest@docker
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}rest.replacepathregex.regex=^/${COMPOSE_PROJECT_NAME}rest(.*)
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}rest.replacepathregex.replacement=/BC$$1
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}rest.loadBalancer.server.scheme=${SCHEMA:-http}
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}rest.loadBalancer.server.port=7048
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}rest.loadbalancer.serverstransport=BCHTTP@file
+
+      ## SOAP Endpoint ##
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}soap.rule=Host(`${FQNNAME:?error}`) && PathPrefix(`/{path:(?i)${COMPOSE_PROJECT_NAME}soap}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}soap.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}soap.service=${COMPOSE_PROJECT_NAME}soap@docker
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}soap.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}soap.middlewares=${COMPOSE_PROJECT_NAME}soap@docker
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}soap.replacepathregex.regex=^/${COMPOSE_PROJECT_NAME}soap(.*)
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}soap.replacepathregex.replacement=/BC$$1
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}soap.loadBalancer.server.scheme=${SCHEMA:-http}
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}soap.loadBalancer.server.port=7047
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}soap.loadbalancer.serverstransport=BCHTTP@file
+
+      ## SNAP Endpoint ##  
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}snap.rule=Host(`${FQNNAME:?error}`) && PathPrefix(`/{path:(?i)${COMPOSE_PROJECT_NAME}snap}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}snap.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}snap.service=${COMPOSE_PROJECT_NAME}snap@docker
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}snap.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}snap.middlewares=${COMPOSE_PROJECT_NAME}snap@docker
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}snap.replacepathregex.regex=^/${COMPOSE_PROJECT_NAME}snap(.*)
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}snap.replacepathregex.replacement=/BC$$1
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}snap.loadBalancer.server.scheme=${SCHEMA:-http}
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}snap.loadBalancer.server.port=7083
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}snap.loadbalancer.serverstransport=BCHTTP@file
+
+      ## Port directed shared API Endpoint ##
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}apiO.rule=Host(`${FQNNAME:?error}`) && PathPrefix(`/{path:(?i)${COMPOSE_PROJECT_NAME}api}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}apiO.entrypoints=odata
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}apiO.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}apiO.service=${COMPOSE_PROJECT_NAME}rest@docker
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}apiO.middlewares=${COMPOSE_PROJECT_NAME}api@docker
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}apiS.rule=Host(`${FQNNAME:?error}`) && PathPrefix(`/{path:(?i)${COMPOSE_PROJECT_NAME}api}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}apiS.entrypoints=soap
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}apiS.tls=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}apiS.service=${COMPOSE_PROJECT_NAME}soap@docker
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}apiS.middlewares=${COMPOSE_PROJECT_NAME}api@docker
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}api.replacepathregex.regex=^/${COMPOSE_PROJECT_NAME}api(.*)
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}api.replacepathregex.replacement=/BC$$1
+networks:
+  defaultnat:
+    name: nat
+    external: true
