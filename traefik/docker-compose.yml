@@ -1,0 +1,26 @@
+services:
+  traefik: # what we wanna call the service
+      networks:
+      - defaultnat # the network we want the container to work with
+      image: traefik:windowsservercore-1809 # traefik image that fits your host
+      restart: 'always'
+      ports: # or in terms of traefik: EntryPoints: 
+        - "443:443" # we want to access BC via https
+        - "80:80" # we want to access BCs Fileshare via http
+        - "8080:8080" # we want to access traefiks UI via Http
+        - "7047:7047" # we want access to BC via 7047 Soap
+        - "7048:7048" # we want access to BC via 7048 OData
+      volumes:
+        - D:\Docker\traefik\config:c:\etc\traefik # we want to the local folder D:...\config mapped into the containers C:\etc folder
+        - type: npipe # traefik needs to be able to listen to the docker engine so, share it! 
+          source: \\.\pipe\docker_engine
+          target: \\.\pipe\docker_engine
+      labels: # labels control traefiks behaviour! so lets make the traefik container, traefik aware
+        - traefik.enable=true
+        - traefik.http.routers.api.entrypoints=websecure
+        - traefik.http.routers.api.rule=Host(`${COMPUTERNAME}.mylocal.domain`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`)) # Change this to fit your Host ! My machines are in an AD (domain joined) so I can go along with this FQN
+        - traefik.http.routers.api.service=api@internal
+  networks:
+  defaultnat: # made my live simple to just map the default docker network nat to be used within compose 
+    name: nat
+    external: true
