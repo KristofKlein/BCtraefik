@@ -1,4 +1,4 @@
-# BCtraefik
+# BCtraefik (WiP - well actually not, I have it working, but for this open repo I had to remove some things, so not sure if it will work "as is")
 
 Due to some lucky circumstances I ended up to write this article about my journey with traefik and business Central. I think I am not the only one and there is @tfenster and many others that touched that. However it never made it back into bccontainerhelper to support a newer version of traefik. In the meantime we have reached version 3. 
 
